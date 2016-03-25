@@ -1,0 +1,543 @@
+#DEBUG_MODE = 0;
+
+#imeYN = imestate;
+if( #imeYN ) imeswitch; 
+
+while(1){
+	begingroupundo;
+	#input_code = inputchar("command mode");
+	call code_to_str #input_code;
+	$command = $$return;
+	
+	if (#DEBUG_MODE){
+		#ret = dllfunc("Output",hidemaruhandle(0),str($command) + "\r\n");
+		loaddll "HmOutputPane.dll";
+	}
+	
+		
+
+	/*===========================
+		move cursur
+	============================*/
+	if ($command == "h"){
+		left;
+	}
+	if ($command == "j"){
+		down;
+	}
+	if ($command == "k"){
+		up;
+	}
+	if ($command == "l"){
+		right;
+	}
+	if ($command == "w"){
+		wordright2;
+	}
+	if ($command == "e"){
+		gowordend;
+	}
+	if ($command == "b"){
+		wordleft2;
+	}
+	if ($command == "0"){
+		golinetop;
+	}
+	if ($command == "$"){
+		golineend;
+	}
+	if ($command == "g"){
+		gofiletop;
+	}
+	if ($command == "shift+g"){
+		gofileend;
+	}
+	if ($command == "ctrl+f"){
+		nextpage;
+	}
+	if ($command == "ctrl+b"){
+		prevpage;
+	}
+	if ($command == "f"){
+		#y=y;
+		#s = inputchar("command mode");
+		call code_to_str #s;
+		$s = $$return;
+		searchdown $s;
+		if (#y != y ){
+			moveto x,#y;
+		}else{
+			right;
+		}
+	}
+
+	if ($command == "t"){
+		#y=y;
+		#s = inputchar("command mode");
+		call code_to_str #s;
+		$s = $$return;
+		searchdown $s;
+		if (#y != y ){
+			moveto x,#y;
+		}else{
+			left;
+			right;
+		}
+	}
+
+	if (#delete_mode && $command != "d"){
+		cut;
+		#delete_mode=0;
+	}
+	if (#deleteIns_mode && $command != "c"){
+		cut;
+		#deleteIns_mode=0;
+		break;
+	}
+
+	/*===========================
+		edit
+	============================*/
+	if ($command == "ctrl+r"){
+		redo;
+	}
+	if ($command == "u"){
+		undo;
+	}
+	if ($command == "x"){
+		if (!selecting){
+			beginsel ;
+			right;
+		}
+		cut;
+	}
+	if ($command == "d"){
+		if (#delete_mode){
+			selectline;
+			cut;
+			#delete_mode=0;
+		} else{
+			if (selecting){
+				cut;
+			} else {
+				#delete_mode = 1;
+				beginsel;
+			}
+		}
+	}
+	if ($command == "c"){
+		if (#deleteIns_mode){
+			selectline;
+			cut;
+			#deleteIns_mode=0;
+			break;
+		} else{
+			if (selecting){
+				cut;
+				break;
+			}
+			#deleteIns_mode = 1;
+			beginsel;
+		}
+	}
+	if ($command == "shift+j"){
+		down;
+		selectline;
+		#i = 0;
+		while(#i<10){
+			unindent;
+			#i = #i+1;
+		}
+		up;
+		golineend;
+		//insert " ";
+		delete;
+	}
+	if ($command == "y"){
+		if (selecting){
+			copy;
+			endsel;
+		} else {
+			copyline;
+		}
+	}
+	if ($command == "p"){
+		beginclipboardread;
+		$a = getclipboard;
+		#x = x;
+		#y = y;
+		if( rightstr($a,1) == "\n"){
+			down;
+			golinetop;
+			paste;
+			up;
+		}else{
+			paste;
+		}
+	}
+	if ($command == ">"){
+		if ( !selecting ) selectline;
+		indent;
+		escape;
+	}
+	if ($command == "<"){
+		if ( !selecting ) selectline;
+		unindent;
+		escape;
+	}
+	
+	/*===========================
+		visual mode
+	============================*/
+	
+	if ($command == "shift+v"){
+		golinetop;
+		beginsel;
+		down;
+	}
+	if ($command == "v"){
+		beginsel;
+	}
+	if ($command == "Esc") {
+		escape;
+	}
+	if ($command == "ctrl+v") {
+		beginrect;
+	}
+	
+	/*===========================
+		search and replace
+	============================*/
+	if ($command == "/"){
+		$s = input("type a keyword");
+		if ($s != "") {
+			searchdown $s,regular;
+		}
+	}
+	if ($command == "n"){
+		finddown;
+	}
+	if ($command == "shift+n"){
+		findup;
+	}
+	
+	/*===========================
+		edit mode
+	============================*/
+	if ($command == "i"){
+		break;
+	}
+	if ($command == "a"){
+		right;
+		break;
+	}
+	if ($command == "o"){
+		golineend;
+		insertreturn;
+		break;
+	}
+	if ($command == "shift+o"){
+		insertreturn;
+		up;
+		break;
+	}
+	if ($command == "shift+i"){
+		golinetop;
+		break;
+	}
+	if ($command == "shift+a"){
+		golineend;
+		break;
+	}
+
+	/*===========================
+		file and window
+	============================*/
+	if ($command == ":"){
+		$cmd = input("type a command");
+		if ($cmd == "w"){
+			save;
+		}
+		if ($cmd == "new"){
+			newfile;
+		}
+		if ($cmd == "q"){
+			exit;
+		}
+		if ($cmd == "wq"){
+			save;
+			exit;
+		}
+		if ($cmd == "s"){
+			$s = input("type a keyword");
+			$r = input("type a replace word");
+			replaceall $s,$r,regular;
+			message ("substituted:" + str(result));
+		}
+	}
+	if ($command == "ctrl+w"){
+		nexttab;
+	}
+	
+	
+	endgroupundo;
+	
+
+
+}
+
+
+if( #imeYN != imestate ) imeswitch;
+endmacro; 
+
+code_to_str:
+	if (##1 == 97) $$return_str = "a" ;
+	if (##1 == 98) $$return_str = "b" ;
+	if (##1 == 99) $$return_str = "c" ;
+	if (##1 == 100) $$return_str = "d" ;
+	if (##1 == 101) $$return_str = "e" ;
+	if (##1 == 102) $$return_str = "f" ;
+	if (##1 == 103) $$return_str = "g" ;
+	if (##1 == 104) $$return_str = "h" ;
+	if (##1 == 105) $$return_str = "i" ;
+	if (##1 == 106) $$return_str = "j" ;
+	if (##1 == 107) $$return_str = "k" ;
+	if (##1 == 108) $$return_str = "l" ;
+	if (##1 == 109) $$return_str = "m" ;
+	if (##1 == 110) $$return_str = "n" ;
+	if (##1 == 111) $$return_str = "o" ;
+	if (##1 == 112) $$return_str = "p" ;
+	if (##1 == 113) $$return_str = "q" ;
+	if (##1 == 114) $$return_str = "r" ;
+	if (##1 == 115) $$return_str = "s" ;
+	if (##1 == 116) $$return_str = "t" ;
+	if (##1 == 117) $$return_str = "u" ;
+	if (##1 == 118) $$return_str = "v" ;
+	if (##1 == 119) $$return_str = "w" ;
+	if (##1 == 120) $$return_str = "x" ;
+	if (##1 == 121) $$return_str = "y" ;
+	if (##1 == 122) $$return_str = "z" ;
+	if (##1 == 1) $$return_str = "ctrl+a" ;
+	if (##1 == 2) $$return_str = "ctrl+b" ;
+	if (##1 == 3) $$return_str = "ctrl+c" ;
+	if (##1 == 4) $$return_str = "ctrl+d" ;
+	if (##1 == 5) $$return_str = "ctrl+e" ;
+	if (##1 == 6) $$return_str = "ctrl+f" ;
+	if (##1 == 7) $$return_str = "ctrl+g" ;
+	if (##1 == 8) $$return_str = "ctrl+h" ;
+	if (##1 == 9) $$return_str = "ctrl+i" ;
+	if (##1 == 10) $$return_str = "ctrl+j" ;
+	if (##1 == 11) $$return_str = "ctrl+k" ;
+	if (##1 == 12) $$return_str = "ctrl+l" ;
+	if (##1 == 13) $$return_str = "ctrl+m" ;
+	if (##1 == 14) $$return_str = "ctrl+n" ;
+	if (##1 == 15) $$return_str = "ctrl+o" ;
+	if (##1 == 16) $$return_str = "ctrl+p" ;
+	if (##1 == 17) $$return_str = "ctrl+q" ;
+	if (##1 == 18) $$return_str = "ctrl+r" ;
+	if (##1 == 19) $$return_str = "ctrl+s" ;
+	if (##1 == 20) $$return_str = "ctrl+t" ;
+	if (##1 == 21) $$return_str = "ctrl+u" ;
+	if (##1 == 22) $$return_str = "ctrl+v" ;
+	if (##1 == 23) $$return_str = "ctrl+w" ;
+	if (##1 == 24) $$return_str = "ctrl+x" ;
+	if (##1 == 25) $$return_str = "ctrl+y" ;
+	if (##1 == 26) $$return_str = "ctrl+z" ;
+	if (##1 == 65) $$return_str = "shift+a" ;
+	if (##1 == 66) $$return_str = "shift+b" ;
+	if (##1 == 67) $$return_str = "shift+c" ;
+	if (##1 == 68) $$return_str = "shift+d" ;
+	if (##1 == 69) $$return_str = "shift+e" ;
+	if (##1 == 70) $$return_str = "shift+f" ;
+	if (##1 == 71) $$return_str = "shift+g" ;
+	if (##1 == 72) $$return_str = "shift+h" ;
+	if (##1 == 73) $$return_str = "shift+i" ;
+	if (##1 == 74) $$return_str = "shift+j" ;
+	if (##1 == 75) $$return_str = "shift+k" ;
+	if (##1 == 76) $$return_str = "shift+l" ;
+	if (##1 == 77) $$return_str = "shift+m" ;
+	if (##1 == 78) $$return_str = "shift+n" ;
+	if (##1 == 79) $$return_str = "shift+o" ;
+	if (##1 == 80) $$return_str = "shift+p" ;
+	if (##1 == 81) $$return_str = "shift+q" ;
+	if (##1 == 82) $$return_str = "shift+r" ;
+	if (##1 == 83) $$return_str = "shift+s" ;
+	if (##1 == 84) $$return_str = "shift+t" ;
+	if (##1 == 85) $$return_str = "shift+u" ;
+	if (##1 == 86) $$return_str = "shift+v" ;
+	if (##1 == 87) $$return_str = "shift+w" ;
+	if (##1 == 88) $$return_str = "shift+x" ;
+	if (##1 == 89) $$return_str = "shift+y" ;
+	if (##1 == 90) $$return_str = "shift+z" ;
+	if (##1 == 48) $$return_str = "0" ;
+	if (##1 == 49) $$return_str = "1" ;
+	if (##1 == 50) $$return_str = "2" ;
+	if (##1 == 51) $$return_str = "3" ;
+	if (##1 == 52) $$return_str = "4" ;
+	if (##1 == 53) $$return_str = "5" ;
+	if (##1 == 54) $$return_str = "6" ;
+	if (##1 == 55) $$return_str = "7" ;
+	if (##1 == 56) $$return_str = "8" ;
+	if (##1 == 57) $$return_str = "9" ;
+	if (##1 == 32) $$return_str = " " ;
+	if (##1 == 33) $$return_str = "!" ;
+	if (##1 == 34) $$return_str = "\"" ;
+	if (##1 == 35) $$return_str = "#" ;
+	if (##1 == 36) $$return_str = "$" ;
+	if (##1 == 37) $$return_str = "%" ;
+	if (##1 == 38) $$return_str = "&" ;
+	if (##1 == 39) $$return_str = "'" ;
+	if (##1 == 40) $$return_str = "(" ;
+	if (##1 == 41) $$return_str = ")" ;
+	if (##1 == 61) $$return_str = "=" ;
+	if (##1 == 126) $$return_str = "~" ;
+	if (##1 == 124) $$return_str = "|" ;
+	if (##1 == 45) $$return_str = "-" ;
+	if (##1 == 94) $$return_str = "^" ;
+	if (##1 == 92) $$return_str = "\\" ;
+	if (##1 == 64) $$return_str = "@" ;
+	if (##1 == 91) $$return_str = "[" ;
+	if (##1 == 59) $$return_str = ";" ;
+	if (##1 == 58) $$return_str = ":" ;
+	if (##1 == 93) $$return_str = "]" ;
+	if (##1 == 44) $$return_str = "," ;
+	if (##1 == 46) $$return_str = "." ;
+	if (##1 == 47) $$return_str = "/" ;
+	if (##1 == 96) $$return_str = "`" ;
+	if (##1 == 123) $$return_str = "{" ;
+	if (##1 == 43) $$return_str = "+" ;
+	if (##1 == 42) $$return_str = "*" ;
+	if (##1 == 125) $$return_str = "}" ;
+	if (##1 == 60) $$return_str = "<" ;
+	if (##1 == 62) $$return_str = ">" ;
+	if (##1 == 63) $$return_str = "?" ;
+	if (##1 == 95) $$return_str = "_" ;
+	if (##1 == 27 ) $$return_str = "Esc" ;
+return $$return_str;
+
+string_to_code:
+	if ($$1 == "a") ##return_code = 97;
+	if ($$1 == "b") ##return_code = 98 ;
+	if ($$1 == "c") ##return_code = 99 ;
+	if ($$1 == "d") ##return_code = 100 ;
+	if ($$1 == "e") ##return_code = 101 ;
+	if ($$1 == "f") ##return_code = 102 ;
+	if ($$1 == "g") ##return_code = 103 ;
+	if ($$1 == "h") ##return_code = 104 ;
+	if ($$1 == "i") ##return_code = 105 ;
+	if ($$1 == "j") ##return_code = 106 ;
+	if ($$1 == "k") ##return_code = 107 ;
+	if ($$1 == "l") ##return_code = 108 ;
+	if ($$1 == "m") ##return_code = 109 ;
+	if ($$1 == "n") ##return_code = 110 ;
+	if ($$1 == "o") ##return_code = 111 ;
+	if ($$1 == "p") ##return_code = 112 ;
+	if ($$1 == "q") ##return_code = 113 ;
+	if ($$1 == "r") ##return_code = 114 ;
+	if ($$1 == "s") ##return_code = 115 ;
+	if ($$1 == "t") ##return_code = 116 ;
+	if ($$1 == "u") ##return_code = 117 ;
+	if ($$1 == "v") ##return_code = 118 ;
+	if ($$1 == "w") ##return_code = 119 ;
+	if ($$1 == "x") ##return_code = 120 ;
+	if ($$1 == "y") ##return_code = 121 ;
+	if ($$1 == "z") ##return_code = 122 ;
+	if ($$1 == "ctrl+a") ##return_code = 1 ;
+	if ($$1 == "ctrl+b") ##return_code = 2 ;
+	if ($$1 == "ctrl+c") ##return_code = 3 ;
+	if ($$1 == "ctrl+d") ##return_code = 4 ;
+	if ($$1 == "ctrl+e") ##return_code = 5 ;
+	if ($$1 == "ctrl+f") ##return_code = 6 ;
+	if ($$1 == "ctrl+g") ##return_code = 7 ;
+	if ($$1 == "ctrl+h") ##return_code = 8 ;
+	if ($$1 == "ctrl+i") ##return_code = 9 ;
+	if ($$1 == "ctrl+j") ##return_code = 10 ;
+	if ($$1 == "ctrl+k") ##return_code = 11 ;
+	if ($$1 == "ctrl+l") ##return_code = 12 ;
+	if ($$1 == "ctrl+m") ##return_code = 13 ;
+	if ($$1 == "ctrl+n") ##return_code = 14 ;
+	if ($$1 == "ctrl+o") ##return_code = 15 ;
+	if ($$1 == "ctrl+p") ##return_code = 16 ;
+	if ($$1 == "ctrl+q") ##return_code = 17 ;
+	if ($$1 == "ctrl+r") ##return_code = 18 ;
+	if ($$1 == "ctrl+s") ##return_code = 19 ;
+	if ($$1 == "ctrl+t") ##return_code = 20 ;
+	if ($$1 == "ctrl+u") ##return_code = 21 ;
+	if ($$1 == "ctrl+v") ##return_code = 22 ;
+	if ($$1 == "ctrl+w") ##return_code = 23 ;
+	if ($$1 == "ctrl+x") ##return_code = 24 ;
+	if ($$1 == "ctrl+y") ##return_code = 25 ;
+	if ($$1 == "ctrl+z") ##return_code = 26 ;
+	if ($$1 == "shift+a") ##return_code = 65 ;
+	if ($$1 == "shift+b") ##return_code = 66 ;
+	if ($$1 == "shift+c") ##return_code = 67 ;
+	if ($$1 == "shift+d") ##return_code = 68 ;
+	if ($$1 == "shift+e") ##return_code = 69 ;
+	if ($$1 == "shift+f") ##return_code = 70 ;
+	if ($$1 == "shift+g") ##return_code = 71 ;
+	if ($$1 == "shift+h") ##return_code = 72 ;
+	if ($$1 == "shift+i") ##return_code = 73 ;
+	if ($$1 == "shift+j") ##return_code = 74 ;
+	if ($$1 == "shift+k") ##return_code = 75 ;
+	if ($$1 == "shift+l") ##return_code = 76 ;
+	if ($$1 == "shift+m") ##return_code = 77 ;
+	if ($$1 == "shift+n") ##return_code = 78 ;
+	if ($$1 == "shift+o") ##return_code = 79 ;
+	if ($$1 == "shift+p") ##return_code = 80 ;
+	if ($$1 == "shift+q") ##return_code = 81 ;
+	if ($$1 == "shift+r") ##return_code = 82 ;
+	if ($$1 == "shift+s") ##return_code = 83 ;
+	if ($$1 == "shift+t") ##return_code = 84 ;
+	if ($$1 == "shift+u") ##return_code = 85 ;
+	if ($$1 == "shift+v") ##return_code = 86 ;
+	if ($$1 == "shift+w") ##return_code = 87 ;
+	if ($$1 == "shift+x") ##return_code = 88 ;
+	if ($$1 == "shift+y") ##return_code = 89 ;
+	if ($$1 == "shift+z") ##return_code = 90 ;
+	if ($$1 == "0") ##return_code = 48 ;
+	if ($$1 == "1") ##return_code = 49 ;
+	if ($$1 == "2") ##return_code = 50 ;
+	if ($$1 == "3") ##return_code = 51 ;
+	if ($$1 == "4") ##return_code = 52 ;
+	if ($$1 == "5") ##return_code = 53 ;
+	if ($$1 == "6") ##return_code = 54 ;
+	if ($$1 == "7") ##return_code = 55 ;
+	if ($$1 == "8") ##return_code = 56 ;
+	if ($$1 == "9") ##return_code = 57 ;
+	if ($$1 == " ") ##return_code = 32 ;
+	if ($$1 == "!") ##return_code = 33 ;
+	if ($$1 == "\"") ##return_code = 34 ;
+	if ($$1 == "#") ##return_code = 35 ;
+	if ($$1 == "$") ##return_code = 36 ;
+	if ($$1 == "%") ##return_code = 37 ;
+	if ($$1 == "&") ##return_code = 38 ;
+	if ($$1 == "'") ##return_code = 39 ;
+	if ($$1 == "(") ##return_code = 40 ;
+	if ($$1 == ")") ##return_code = 41 ;
+	if ($$1 == "=") ##return_code = 61 ;
+	if ($$1 == "~") ##return_code = 126 ;
+	if ($$1 == "|") ##return_code = 124 ;
+	if ($$1 == "-") ##return_code = 45 ;
+	if ($$1 == "^") ##return_code = 94 ;
+	if ($$1 == "\\") ##return_code = 92 ;
+	if ($$1 == "@") ##return_code = 64 ;
+	if ($$1 == "[") ##return_code = 91 ;
+	if ($$1 == ";") ##return_code = 59 ;
+	if ($$1 == ":") ##return_code = 58 ;
+	if ($$1 == "]") ##return_code = 93 ;
+	if ($$1 == ",") ##return_code = 44 ;
+	if ($$1 == ".") ##return_code = 46 ;
+	if ($$1 == "/") ##return_code = 47 ;
+	if ($$1 == "`") ##return_code = 96 ;
+	if ($$1 == "{") ##return_code = 123 ;
+	if ($$1 == "+") ##return_code = 43 ;
+	if ($$1 == "*") ##return_code = 42 ;
+	if ($$1 == "}") ##return_code = 125 ;
+	if ($$1 == "<") ##return_code = 60 ;
+	if ($$1 == ">") ##return_code = 62 ;
+	if ($$1 == "?") ##return_code = 63 ;
+	if ($$1 == "_") ##return_code = 95 ;
+return ##return_code;
+
+
+
