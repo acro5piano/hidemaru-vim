@@ -1,2 +1,2 @@
 # hidemaru-vim
-you can use Hidemaru like vim
+You can use Hidemaru like vim.
